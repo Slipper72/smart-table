@@ -36,30 +36,22 @@ function collectState() {
  * @param {HTMLButtonElement?} action
  */
 function render(action) {
-    const state = collectState();
-    let result = [...data];
-    const debug = [`всего: ${result.length}`];
+    let state = collectState(); 
+    
+    // Безопасное получение страницы и размера, если они NaN (первый рендер)
+    if (isNaN(state.page)) state.page = 1;
+    if (isNaN(state.rowsPerPage)) state.rowsPerPage = 10;
 
+    let result = [...data]; 
+    
+    // Порядок важен: сначала фильтры/поиск/сортировка, потом пагинация
     result = applySearching(result, state, action);
-    debug.push(`после поиска: ${result.length}`);
     result = applyFiltering(result, state, action);
-    debug.push(`после фильтра: ${result.length}`);
     result = applySorting(result, state, action);
-    debug.push(`после сортировки: ${result.length}`);
     result = applyPagination(result, state, action);
-    debug.push(`после пагинации: ${result.length}`);
-
-    const panel = document.getElementById('debug-panel') || document.body.appendChild(Object.assign(document.createElement('pre'), {id: 'debug-panel'}));
-    panel.textContent = debug.join(' | ');
 
     sampleTable.render(result);
 }
-
-// ошибки JS тоже выведем на страницу, раз консоли в CI нет
-window.addEventListener('error', (e) => {
-    const panel = document.getElementById('debug-panel') || document.body.appendChild(Object.assign(document.createElement('pre'), {id: 'debug-panel'}));
-    panel.textContent += ` | ОШИБКА: ${e.message} (${e.filename}:${e.lineno})`;
-});
 
 const sampleTable = initTable({
     tableTemplate: 'table',
