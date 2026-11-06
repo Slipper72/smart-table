@@ -7,12 +7,10 @@ import {initData} from "./data.js";
 import {processFormData} from "./lib/utils.js";
 
 import {initTable} from "./components/table.js";
-import {initPagination} from "./components/pagination.js"
-import {initSorting} from "./components/sorting.js"
-import {initFiltering} from "./components/filtering.js"
-import {initSearching} from "./components/searching.js"
-// @todo: подключение
-
+import {initPagination} from "./components/pagination.js";
+import {initSorting} from "./components/sorting.js";
+import {initFiltering} from "./components/filtering.js";
+import {initSearching} from "./components/searching.js" // @todo: подключение
 
 // Исходные данные используемые в render()
 const {data, ...indexes} = initData(sourceData);
@@ -24,7 +22,8 @@ const {data, ...indexes} = initData(sourceData);
 function collectState() {
     const state = processFormData(new FormData(sampleTable.container));
     const rowsPerPage = parseInt(state.rowsPerPage);    // приведём количество страниц к числу
-    const page = parseInt(state.page ?? 1);
+    const page = parseInt(state.page ?? 1);             // номер страницы по умолчанию 1 и тоже число
+
     return {
         ...state,
         rowsPerPage,
@@ -37,37 +36,41 @@ function collectState() {
  * @param {HTMLButtonElement?} action
  */
 function render(action) {
-       let state = collectState(); // состояние полей из таблицы
-    let result = [...data]; // копируем для последующего изменения
-    // @todo: использование
-    result = applyFiltering(result, state, action);
+    const state = collectState();
+    let result = [...data];
+    const debug = [`всего: ${result.length}`];
+
     result = applySearching(result, state, action);
-
-    // 3. Сортировка
+    debug.push(`после поиска: ${result.length}`);
+    result = applyFiltering(result, state, action);
+    debug.push(`после фильтра: ${result.length}`);
     result = applySorting(result, state, action);
+    debug.push(`после сортировки: ${result.length}`);
     result = applyPagination(result, state, action);
+    debug.push(`после пагинации: ${result.length}`);
 
-    sampleTable.render(result)
+    const panel = document.getElementById('debug-panel') || document.body.appendChild(Object.assign(document.createElement('pre'), {id: 'debug-panel'}));
+    panel.textContent = debug.join(' | ');
 
+    sampleTable.render(result);
 }
+
+// ошибки JS тоже выведем на страницу, раз консоли в CI нет
+window.addEventListener('error', (e) => {
+    const panel = document.getElementById('debug-panel') || document.body.appendChild(Object.assign(document.createElement('pre'), {id: 'debug-panel'}));
+    panel.textContent += ` | ОШИБКА: ${e.message} (${e.filename}:${e.lineno})`;
+});
 
 const sampleTable = initTable({
     tableTemplate: 'table',
     rowTemplate: 'row',
-    before: ['search','header', 'filter'],
+    before: ['header', 'search', 'filter'],
     after: ['pagination']
 }, render);
 
 // @todo: инициализация
-
 const applyPagination = initPagination(
-    {
-        // Нам нужно достать конкретные элементы из пагинации
-        pages: sampleTable.pagination.elements.pages,
-        fromRow: sampleTable.pagination.elements.fromRow,
-        toRow: sampleTable.pagination.elements.toRow,
-        totalRows: sampleTable.pagination.elements.totalRows
-    },
+    sampleTable.pagination.elements,
     (el, page, isCurrent) => {
         const input = el.querySelector('input');
         const label = el.querySelector('span');
@@ -78,11 +81,12 @@ const applyPagination = initPagination(
     }
 );
 
-//@todo 2 инициализация
-const applySorting = initSorting([        // Нам нужно передать сюда массив элементов, которые вызывают сортировку, чтобы изменять их визуальное представление
+const applySorting = initSorting([
     sampleTable.header.elements.sortByDate,
     sampleTable.header.elements.sortByTotal
 ]);
+
+
 const applyFiltering = initFiltering(sampleTable.filter.elements, {    // передаём элементы фильтра
     searchBySeller: indexes.sellers                                    // для элемента с именем searchBySeller устанавливаем массив продавцов
 });
@@ -92,4 +96,4 @@ const applySearching = initSearching('search');
 const appRoot = document.querySelector('#app');
 appRoot.appendChild(sampleTable.container);
 
-render(); 
+render();
