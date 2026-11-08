@@ -1,6 +1,6 @@
-import { cloneTemplate } from "../lib/utils.js";
+import {cloneTemplate} from "../lib/utils.js";
+
 /**
- * 
  * Инициализирует таблицу и вызывает коллбэк при любых изменениях и нажатиях на кнопки
  *
  * @param {Object} settings
@@ -8,60 +8,47 @@ import { cloneTemplate } from "../lib/utils.js";
  * @returns {{container: Node, elements: *, render: render}}
  */
 export function initTable(settings, onAction) {
-  const { tableTemplate, rowTemplate, before = [], after = [] } = settings;
-  const root = cloneTemplate(tableTemplate);
+    const {tableTemplate, rowTemplate, before, after} = settings;
+    const root = cloneTemplate(tableTemplate);
 
-  // @todo: #1.2 — вывести дополнительные шаблоны до и после таблицы
-  
-  // Для before используем reverse(), так как prepend вставляет элемент самым первым.
-  // Без reverse порядок элементов будет инвертирован относительно массива.
-  before.reverse().forEach(subName => {
-    root[subName] = cloneTemplate(subName);
-    root.container.prepend(root[subName].container);
+    // @todo: #1.2 —  вывести дополнительные шаблоны до и после таблицы
+    before.reverse().forEach(subName => {
+        root[subName] = cloneTemplate(subName);
+        root.container.prepend(root[subName].container);
   });
 
-  // Для after порядок сохраняется, reverse не нужен
-  after.forEach(subName => {
-    root[subName] = cloneTemplate(subName);
-    root.container.append(root[subName].container);
+    after.forEach(subName => {
+        root[subName] = cloneTemplate(subName);
+        root.container.append(root[subName].container);
   });
+    // @todo: #1.3 —  обработать события и вызвать onAction()
+    root.container.addEventListener('change', () => {
+        onAction();
+});
 
-  // @todo: #1.3 — обработать события и вызвать onAction()
-  
-  // Событие change: срабатывает при изменении инпутов, селектов и т.д.
-  root.container.addEventListener('change', () => {
-    onAction();
-  });
-
-  // Событие reset: нужна задержка, чтобы браузер успел сбросить значения полей формы
-  root.container.addEventListener('reset', () => {
-    setTimeout(() => {
-      onAction();
-    }, 0);
-  });
-
-  // Событие submit: предотвращаем перезагрузку страницы и передаем кнопку-триггер
-  root.container.addEventListener('submit', (e) => {
-    e.preventDefault();
-    onAction(e.submitter);
-  });
-
-  const render = (data) => {
-    // @todo: #1.1 — преобразовать данные в массив строк на основе шаблона rowTemplate
-     const nextRows = data.map((item) => {
-      const row = cloneTemplate(rowTemplate);
-      
-      Object.keys(item).forEach((key) => {
-        if (key in row.elements) {
-          row.elements[key].textContent = item[key];
-        }
-      });
-      
-      return row.container; 
+    root.container.addEventListener('reset', () => {
+        setTimeout(() => {
+            onAction();
+    });
     });
 
-    root.elements.rows.replaceChildren(...nextRows);
-  };
+    root.container.addEventListener('submit', (e) => {
+        e.preventDefault();
+        onAction(e.submitter);
+    });
+    const render = (data) => {
+        // @todo: #1.1 — преобразовать данные в массив строк на основе шаблона rowTemplate
+        const nextRows = data.map((item) => {
+            const row = cloneTemplate(rowTemplate);
+        Object.keys(item).forEach((key) => {
+            if (key in row.elements) {
+                row.elements[key].textContent = item[key];
+            }
+        });
+        return row;
+        });
+        root.elements.rows.replaceChildren(...nextRows);
+    }
 
-  return { ...root, render };
+    return {...root, render};
 }
