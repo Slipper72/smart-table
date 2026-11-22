@@ -36,6 +36,7 @@ function collectState() {
  * @param {HTMLButtonElement?} action
  */
 async function render(action) {
+
     let state = collectState();
     let query = {};
 

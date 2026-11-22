@@ -1,31 +1,30 @@
 import { getPages } from "../lib/utils.js";
 
 export const initPagination = ({ pages, fromRow, toRow, totalRows }, createPage) => {
-
     const pageTemplate = pages.firstElementChild.cloneNode(true);
     pages.firstElementChild.remove();
 
-    let pageCount;
+    let pageCount; // количество страниц с последней отрисовки
 
     const applyPagination = (query, state, action) => {
         const limit = state.rowsPerPage;
         let page = state.page;
 
-        if (action) {
+        if (action && ['rowsPerPage', 'clear'].includes(action.name)) {
+            page = 1; // при смене количества строк и сбросе фильтров — на первую страницу
+        } else if (action) {
             switch (action.name) {
-                case 'prev': 
-                    page = Math.max(1, page - 1); 
+                case 'prev':
+                    page = Math.max(1, page - 1);
                     break;
-                case 'next': 
-
+                case 'next':
                     page = pageCount ? Math.min(pageCount, page + 1) : page + 1;
                     break;
-                case 'first': 
-                    page = 1; 
+                case 'first':
+                    page = 1;
                     break;
-                case 'last': 
-
-                    page = pageCount || page; 
+                case 'last':
+                    page = pageCount || page;
                     break;
             }
         }
@@ -34,7 +33,7 @@ export const initPagination = ({ pages, fromRow, toRow, totalRows }, createPage)
     };
 
     const updatePagination = (total, { page, limit }) => {
-        pageCount = Math.ceil(total / limit);
+        pageCount = Math.max(1, Math.ceil(total / limit));
 
         const visiblePages = getPages(page, pageCount, 5);
 

@@ -1,40 +1,30 @@
 export function initSorting(columns) {
-    return (query, state, action) => {
-        let field = null;
-        let order = null;
+    let currentColumn = null;
+    let currentOrder = null;
 
-            if (action && action.name === 'sort') {
+    const applySorting = (query, state, action) => {
 
-            const btn = action.target.closest('button[data-field]') || action.target;
-            
+        if (action) {
+            const btn = action.closest?.('button[data-field]');
+
             if (btn) {
-                const currentOrder = btn.dataset.value;
+                currentColumn = btn;
+                currentOrder = btn.dataset.value === 'asc' ? 'desc' : 'asc';
 
-                const nextOrder = sortMap[currentOrder]; 
-
-                btn.dataset.value = nextOrder;
-                field = btn.dataset.field;
-                order = nextOrder;
-
-                columns.forEach(col => {
-                    if (col !== btn) {
-                        col.dataset.value = 'none';
-                    }
+                columns.forEach(column => {
+                    column.dataset.value = column === currentColumn ? currentOrder : 'none';
                 });
             }
-        } else {
-            columns.some(col => {
-                if (col.dataset.value !== 'none') {
-                    field = col.dataset.field;
-                    order = col.dataset.value;
-                    return true; // прерываем перебор
-                }
-                return false;
+        }
+
+        if (currentColumn && currentOrder && currentOrder !== 'none') {
+            return Object.assign({}, query, {
+                sort: `${currentColumn.dataset.field}:${currentOrder}`
             });
         }
 
-        const sort = (field && order !== 'none') ? `${field}:${order}` : null; // сохраним в переменную параметр сортировки в виде field:direction
+        return query;
+    };
 
-        return sort ? Object.assign({}, query, { sort }) : query;
-    }
+    return applySorting;
 }
