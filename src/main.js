@@ -18,11 +18,11 @@ const api = initData(sourceData);
  * Сбор и обработка полей из таблицы
  * @returns {Object}
  */
-
 function collectState() {
     const state = processFormData(new FormData(sampleTable.container));
-    const rowsPerPage = parseInt(state.rowsPerPage);
-    const page = parseInt(state.page ?? 1);
+
+    const page = Math.max(1, parseInt(state.page) || 1);
+    const rowsPerPage = Math.max(1, parseInt(state.rowsPerPage) || 10);
 
     return {
         ...state,
@@ -35,7 +35,6 @@ function collectState() {
  * Перерисовка состояния таблицы при любых изменениях
  * @param {HTMLButtonElement?} action
  */
-
 async function render(action) {
     let state = collectState();
     let query = {};
@@ -45,10 +44,14 @@ async function render(action) {
     query = applySorting(query, state, action);
     query = applyPagination(query, state, action);
 
-    const { total, items } = await api.getRecords(query);
+    try {
+        const { total, items } = await api.getRecords(query);
 
-    updatePagination(total, query);
-    sampleTable.render(items);
+        updatePagination(total, query);
+        sampleTable.render(items);
+    } catch (error) {
+    console.error('Ошибка при получении данных:', error);
+    }
 }
 
 const sampleTable = initTable({
