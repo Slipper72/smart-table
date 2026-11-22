@@ -2,7 +2,6 @@ import './fonts/ys-display/fonts.css'
 import './style.css'
 
 import {data as sourceData} from "./data/dataset_1.js";
-
 import {initData} from "./data.js";
 import {processFormData} from "./lib/utils.js";
 
@@ -14,13 +13,8 @@ import {initSearching} from "./components/searching.js";
 
 const api = initData(sourceData);
 
-/**
- * Сбор и обработка полей из таблицы
- * @returns {Object}
- */
 function collectState() {
     const state = processFormData(new FormData(sampleTable.container));
-
     const page = Math.max(1, parseInt(state.page) || 1);
     const rowsPerPage = Math.max(1, parseInt(state.rowsPerPage) || 10);
 
@@ -31,12 +25,7 @@ function collectState() {
     };
 }
 
-/**
- * Перерисовка состояния таблицы при любых изменениях
- * @param {HTMLButtonElement?} action
- */
 async function render(action) {
-
     let state = collectState();
     let query = {};
 
@@ -47,11 +36,10 @@ async function render(action) {
 
     try {
         const { total, items } = await api.getRecords(query);
-
         updatePagination(total, query);
         sampleTable.render(items);
     } catch (error) {
-    console.error('Ошибка при получении данных:', error);
+        console.error('Ошибка при получении данных:', error);
     }
 }
 
@@ -61,6 +49,9 @@ const sampleTable = initTable({
     before: ['header', 'search', 'filter'],
     after: ['pagination']
 }, render);
+
+const appRoot = document.querySelector('#app');
+appRoot.appendChild(sampleTable.container);
 
 const {applyPagination, updatePagination} = initPagination(
     sampleTable.pagination.elements,
@@ -82,9 +73,6 @@ const applySorting = initSorting([
 ]);
 
 const applySearching = initSearching('search');
-
-const appRoot = document.querySelector('#app');
-appRoot.appendChild(sampleTable.container);
 
 async function init() {
     const indexes = await api.getIndexes();
