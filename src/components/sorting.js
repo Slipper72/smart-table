@@ -1,25 +1,37 @@
+const sortMap = {
+    none: 'down',
+    down: 'up',
+    up: 'none'
+};
+
 export function initSorting(columns) {
-    let currentColumn = null;
-    let currentOrder = null;
+    let field = null;
+    let order = null;
 
     const applySorting = (query, state, action) => {
-
         if (action) {
-            const btn = action.closest?.('button[data-field]');
+            action.dataset.value = sortMap[action.dataset.value];
 
-            if (btn) {
-                currentColumn = btn;
-                currentOrder = btn.dataset.value === 'asc' ? 'desc' : 'asc';
+            field = action.dataset.field;
+            order = action.dataset.value;
 
-                columns.forEach(column => {
-                    column.dataset.value = column === currentColumn ? currentOrder : 'none';
-                });
-            }
+            columns.forEach(column => {
+                if (column.dataset.field !== action.dataset.field) {
+                    column.dataset.value = 'none';
+                }
+            });
+        } else {
+            columns.forEach(column => {
+                if (column.dataset.value !== 'none') {
+                    field = column.dataset.field;
+                    order = column.dataset.value;
+                }
+            });
         }
 
-        if (currentColumn && currentOrder && currentOrder !== 'none') {
+        if (field && order !== 'none') {
             return Object.assign({}, query, {
-                sort: `${currentColumn.dataset.field}:${currentOrder}`
+                sort: `${field}:${order}`
             });
         }
 
